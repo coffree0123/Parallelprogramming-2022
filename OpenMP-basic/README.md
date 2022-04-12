@@ -1,5 +1,4 @@
 # OpenMP-basic
-[Toc]
 
 ## Introduction
 **OpenMP(Open Multiprocessing)** is an API that supports multi-platform shared memory multiprocessing programming in C, C++, and Fortran, on most processor architectures.
