@@ -34,7 +34,7 @@ int calculate_diff(int A[MAX_N][MAX_N], int B[MAX_N][MAX_N], int i, int j,
         for (int c = 0; c < B_col; c++)
         {
             int v = (A[r + i][c + j] - B[r][c]);
-            diff +=  v * v;
+            diff += v * v;
         }
     }
 
@@ -75,7 +75,8 @@ int main()
         {
             for (int j = 0; j < A_col - B_col + 1; j++)
             {
-                if (diff[i][j] < min || min == -1) {
+                if (diff[i][j] < min || min == -1)
+                {
                     min = diff[i][j];
                     min_x = i;
                     min_y = j;
