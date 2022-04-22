@@ -1,63 +1,49 @@
 /* begin */
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define MAXN 20
 int n; /* a global n */
 int matrix[MAXN][MAXN];
 
 /* ok */
-int ok(int position[], int next, int test)
-{
-    if (matrix[next][test] == 1)
-        return 0;
+int ok(int position[], int next, int test) {
+    if (matrix[next][test] == 1) return 0;
     for (int i = 0; i < next; i++)
-        if (position[i] == test ||
-            (abs(test - position[i]) == next - i))
+        if (position[i] == test || (abs(test - position[i]) == next - i))
             return 0;
     return 1;
 }
 /* queen */
-int queen(int position[], int next)
-{
-    if (next >= n)
-        return 1;
+int queen(int position[], int next) {
+    if (next >= n) return 1;
     int sum = 0;
     for (int test = 0; test < n; test++)
-        if (ok(position, next, test))
-        {
+        if (ok(position, next, test)) {
             position[next] = test;
             sum += queen(position, next + 1);
         }
     return sum;
 }
 
-void print_matrix(int n)
-{
-    for (int i = 0; i < n; i++)
-    {
-        for (int j = 0; j < n; j++)
-        {
+void print_matrix(int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
             printf("%d%s", matrix[i][j], (j == n - 1) ? "\n" : " ");
         }
     }
 }
 
-int main()
-{
+int main() {
     int cases = 1;
     char s[32] = {};
-    while (scanf("%d", &n) == 1)
-    {
-        for (int i = 0; i < n; i++)
-        {
+    while (scanf("%d", &n) == 1) {
+        for (int i = 0; i < n; i++) {
             scanf("%s", s);
-            for (int j = 0; j < n; j++)
-            {
-                if (s[j] == '*')
-                    matrix[i][j] = 1;
+            for (int j = 0; j < n; j++) {
+                if (s[j] == '*') matrix[i][j] = 1;
             }
         }
 
@@ -68,14 +54,13 @@ int main()
 
 #pragma omp parallel for reduction(+ \
                                    : numSolution) collapse(3) schedule(dynamic, 1)
-        for (int i = 0; i < n; i++)
-        {
-            for (int j = 0; j < n; j++)
-            {
-                for (int k = 0; k < n; k++)
-                {
-                    if (i == j || abs(j - i) == 1 || i == k || abs(i - k) == 2 ||
-                         j == k || abs(j - k) == 1 || matrix[1][j] == 1 || matrix[0][i] == 1 || matrix[2][k] == 1)
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                for (int k = 0; k < n; k++) {
+                    if (i == j || abs(j - i) == 1 || i == k ||
+                        abs(i - k) == 2 || j == k || abs(j - k) == 1 ||
+                        matrix[1][j] == 1 || matrix[0][i] == 1 ||
+                        matrix[2][k] == 1)
                         continue;
                     int position[MAXN];
                     position[0] = i;
