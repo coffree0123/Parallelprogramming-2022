@@ -1,3 +1,5 @@
 *.in
 *.out
 .vscode
+test/*
+output*
