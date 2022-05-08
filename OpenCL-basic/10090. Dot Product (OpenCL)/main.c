@@ -49,7 +49,6 @@ int main() {
             N++;
         }
 
-
         size_t globalSize[] = {N};
         size_t localSize[] = {GroupSize};
 

@@ -22,7 +22,5 @@ __kernel void vecdot(uint32_t key1, uint32_t key2, __global int *C) {
           for (int i = 0; i < localSz; i++){
                C[groupId] += buf[i];
           }
-          barrier(CLK_LOCAL_MEM_FENCE);
      }
-
 }
