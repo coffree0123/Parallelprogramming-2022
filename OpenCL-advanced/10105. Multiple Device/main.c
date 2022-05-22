@@ -6,20 +6,22 @@
 #define UINT uint32_t
 #define Blk 1
 #define MAXN 1024
-#define MAXGPU 6
 #define MAXK 4096
  
+UINT IN[6][MAXN][MAXN], TMP[6][MAXN][MAXN];
+ 
+int MAXGPU = 2;
 cl_int status;
 cl_platform_id platform_id;
 cl_uint platform_id_got;
-cl_device_id GPU[MAXGPU];
+cl_device_id GPU[6];
 cl_uint GPU_id_got;
 cl_context context;
-cl_command_queue commandQueue;
+cl_command_queue commandQueue[6];
 cl_program program;
 cl_kernel kernel;
  
-void multiply(int N, UINT A[][MAXN], UINT B[][MAXN], UINT C[][MAXN]) {
+void multiply(int N, UINT A[][MAXN], UINT B[][MAXN], UINT C[][MAXN], int device) {
     /* createbuffer */
     cl_mem bufferA =
         clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
@@ -43,14 +45,13 @@ void multiply(int N, UINT A[][MAXN], UINT B[][MAXN], UINT C[][MAXN]) {
     status = clSetKernelArg(kernel, 3, sizeof(int), (void *)&N);
     assert(status == CL_SUCCESS);
     /* setshape */
-    size_t globalThreads[] = {(size_t)N, (size_t)N};
+    int fake_N = ((N - 1) / Blk + 1) * Blk;
+    size_t globalThreads[] = {(size_t)fake_N, (size_t)fake_N};
     size_t localThreads[] = {Blk, Blk};
-    status = clEnqueueNDRangeKernel(commandQueue, kernel, 2, NULL,
+    status = clEnqueueNDRangeKernel(commandQueue[device], kernel, 2, NULL,
                                     globalThreads, localThreads, 0, NULL, NULL);
     assert(status == CL_SUCCESS);
-    // wait
-    // clFinish(commandQueue);
-    clEnqueueReadBuffer(commandQueue, bufferC, CL_TRUE, 0,
+    clEnqueueReadBuffer(commandQueue[device], bufferC, CL_TRUE, 0,
                         MAXN * MAXN * sizeof(cl_uint), C, 0, NULL, NULL);
 }
  
@@ -95,15 +96,18 @@ void build_opencl() {
  
     status = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, MAXGPU, GPU,
                             &GPU_id_got);
+    MAXGPU = (GPU_id_got > 1)? 2 : 1;
     assert(status == CL_SUCCESS);
     /* getcontext */
     context =
-        clCreateContext(NULL, GPU_id_got, GPU, NULL, NULL, &status);
+        clCreateContext(NULL, MAXGPU, GPU, NULL, NULL, &status);
     assert(status == CL_SUCCESS);
     /* commandqueue */
-    commandQueue =
-        clCreateCommandQueueWithProperties(context, GPU[0], NULL, &status);
-    assert(status == CL_SUCCESS);
+    for (int i = 0; i < MAXGPU; i++) {
+        commandQueue[i] =
+            clCreateCommandQueueWithProperties(context, GPU[i], NULL, &status);
+        assert(status == CL_SUCCESS);
+    }
     /* kernelsource */
     FILE *kernelfp = fopen("matrix-lib.cl", "r");
     assert(kernelfp != NULL);
@@ -114,7 +118,7 @@ void build_opencl() {
         context, 1, &constKernelSource, &kernelLength, &status);
     assert(status == CL_SUCCESS);
     /* buildprogram */
-    status = clBuildProgram(program, GPU_id_got, GPU, NULL, NULL, NULL);
+    status = clBuildProgram(program, MAXGPU, GPU, NULL, NULL, NULL);
     if (status != CL_SUCCESS) {
         char programBuffer[MAXK];
         size_t log_length;
@@ -128,28 +132,26 @@ void build_opencl() {
     assert(status == CL_SUCCESS);
 }
  
-UINT IN[6][MAXN][MAXN], TMP[6][MAXN][MAXN];
 int main() {
     int N, S[6];
+    build_opencl();
     while(scanf("%d", &N) != EOF) {
         for (int i = 0; i < 6; i++) {
             scanf("%d", &S[i]);
             rand_gen(S[i], N, IN[i]);
         }
-    
-        build_opencl();
         // AB
-        multiply(N, IN[0], IN[1], TMP[0]);
+        multiply(N, IN[0], IN[1], TMP[0], 0);
         // CD
-        multiply(N, IN[2], IN[3], TMP[1]);
+        multiply(N, IN[2], IN[3], TMP[1], MAXGPU-1);
         // AB+CD
         add(N, TMP[0], TMP[1], TMP[2]);
         printf("%u\n", signature(N, TMP[2]));
-    
+ 
         // ABE
-        multiply(N, TMP[0], IN[4], TMP[3]);
+        multiply(N, TMP[0], IN[4], TMP[3], 0);
         // CDF
-        multiply(N, TMP[1], IN[5], TMP[4]);
+        multiply(N, TMP[1], IN[5], TMP[4], MAXGPU-1);
         // ABE+CDF
         add(N, TMP[3], TMP[4], TMP[5]);
         printf("%u\n", signature(N, TMP[5]));
