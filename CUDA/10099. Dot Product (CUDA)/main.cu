@@ -23,7 +23,7 @@ __global__ void vecDot(uint32_t int_array[MAXN/BlockSize], uint32_t key1, uint32
     int_array[blockIdx.x] = sum;
 }
  
-uint32_t A[MAXN/BlockSize], B[MAXN/BlockSize], C[MAXN/BlockSize];
+uint32_t C[MAXN / BlockSize];
 int main(int argc, char *argv[]) {
     int N;
     uint32_t *device_array;
@@ -31,12 +31,9 @@ int main(int argc, char *argv[]) {
     cudaMalloc((void **)&device_array, (MAXN / BlockSize) * sizeof(uint32_t));
  
     while (scanf("%d %" PRIu32 " %" PRIu32, &N, &key1, &key2) == 3) {
-        cudaMemcpy(device_array, A, (MAXN / BlockSize) * sizeof(uint32_t), cudaMemcpyHostToDevice);
  
-        int total_group = N / BlockSize + 1;
-        if (total_group % BlockSize != 0)
-            total_group = (total_group/BlockSize + 1) * BlockSize;
- 
+        int total_group = (N % BlockSize == 0)? N / BlockSize : N / BlockSize + 1;
+        
         vecDot <<< total_group, 1 >>> (device_array, key1, key2, N);
  
         cudaMemcpy(C, device_array, (MAXN / BlockSize) * sizeof(uint32_t), cudaMemcpyDeviceToHost);
